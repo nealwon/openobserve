@@ -244,6 +244,8 @@ pub struct Common {
     pub use_dynamo_meta_store: bool,
     #[env_config(name = "ZO_DYNAMO_FILE_LIST_TABLE", default = "")]
     pub dynamo_file_list_table: String,
+    #[env_config(name = "ZO_DYNAMO_META_TABLE", default = "zo_meta")]
+    pub dynamo_meta_table: String,
 }
 
 #[derive(EnvConfig)]
