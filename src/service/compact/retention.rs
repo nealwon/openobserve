@@ -18,18 +18,21 @@ use std::{
     io::Write,
 };
 
-use crate::common::infra::{
-    cache,
-    cluster::{get_node_by_uuid, LOCAL_NODE_UUID},
-    config::{is_local_disk_storage, CONFIG},
-    dist_lock, ider, storage,
-};
 use crate::common::meta::{
     common::{FileKey, FileMeta},
     stream::PartitionTimeLevel,
     StreamType,
 };
 use crate::common::utils::json;
+use crate::common::{
+    infra::{
+        cache,
+        cluster::{get_node_by_uuid, LOCAL_NODE_UUID},
+        config::{is_local_disk_storage, CONFIG},
+        dist_lock, ider, storage,
+    },
+    meta::meta_store::MetaStore,
+};
 use crate::service::{db, file_list};
 
 pub async fn delete_by_stream(
@@ -313,7 +316,11 @@ async fn write_file_list(
     file_list_days: HashSet<String>,
     hours_files: HashMap<String, Vec<FileKey>>,
 ) -> Result<(), anyhow::Error> {
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         write_file_list_dynamo(hours_files).await
     } else {
         write_file_list_s3(file_list_days, hours_files).await

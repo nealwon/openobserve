@@ -16,6 +16,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 use crate::common::infra::{cache::file_list::parse_file_key_columns, config::CONFIG, wal};
+use crate::common::meta::meta_store::MetaStore;
 use crate::common::meta::stream::StreamParams;
 use crate::common::meta::{
     common::{FileKey, FileMeta},
@@ -32,7 +33,11 @@ pub async fn set(key: &str, meta: FileMeta, deleted: bool) -> Result<(), anyhow:
     };
 
     // dynamodb mode
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         // retry 5 times
         for _ in 0..5 {
             if let Err(e) = super::dynamo_db::write_file(&file_data).await {

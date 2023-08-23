@@ -19,16 +19,19 @@ use ahash::AHashMap;
 use chrono::{DateTime, Datelike, Duration, TimeZone, Timelike, Utc};
 use std::{collections::HashMap, io::Write, sync::Arc};
 
-use crate::common::infra::{
-    cache,
-    config::{CONFIG, FILE_EXT_PARQUET},
-    ider, metrics, storage,
-};
 use crate::common::meta::{
     common::{FileKey, FileMeta},
     StreamType,
 };
 use crate::common::utils::json;
+use crate::common::{
+    infra::{
+        cache,
+        config::{CONFIG, FILE_EXT_PARQUET},
+        ider, metrics, storage,
+    },
+    meta::meta_store::MetaStore,
+};
 use crate::service::{db, file_list, search::datafusion, stream};
 
 /// compactor run steps on a stream:
@@ -411,7 +414,11 @@ async fn write_file_list(events: &[FileKey]) -> Result<(), anyhow::Error> {
     if events.is_empty() {
         return Ok(());
     }
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         write_file_list_dynamo(events).await
     } else {
         write_file_list_s3(events).await

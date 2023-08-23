@@ -16,6 +16,7 @@ use std::io::Write;
 
 use crate::common;
 use crate::common::infra::{cache::file_list, config::CONFIG, ider, storage};
+use crate::common::meta::meta_store::MetaStore;
 use crate::common::meta::{
     common::{FileKey, FileMeta},
     stream::{PartitionTimeLevel, ScanStats},
@@ -32,7 +33,11 @@ pub async fn get_file_list(
     time_min: i64,
     time_max: i64,
 ) -> Result<Vec<FileKey>, anyhow::Error> {
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         db::file_list::dynamo_db::get_stream_file_list(
             org_id,
             stream_name,
@@ -67,7 +72,11 @@ pub async fn get_file_list(
 
 #[inline]
 pub async fn get_file_meta(file: &str) -> Result<FileMeta, anyhow::Error> {
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         db::file_list::dynamo_db::get_file_meta(file).await
     } else {
         file_list::get_file_from_cache(file)
@@ -101,7 +110,11 @@ pub fn calculate_local_files_size(files: &[String]) -> Result<u64, anyhow::Error
 
 // Delete one parquet file and update the file list
 pub async fn delete_parquet_file(key: &str, file_list_only: bool) -> Result<(), anyhow::Error> {
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         delete_parquet_file_dynamo(key, file_list_only).await
     } else {
         delete_parquet_file_s3(key, file_list_only).await

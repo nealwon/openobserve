@@ -14,6 +14,7 @@
 
 use crate::common::infra::config::{CONFIG, INSTANCE_ID, SYSLOG_ENABLED};
 use crate::common::infra::{cluster, ider};
+use crate::common::meta::meta_store::MetaStore;
 use crate::common::meta::organization::DEFAULT_ORG;
 use crate::common::meta::user::UserRequest;
 use crate::service::{db, users};
@@ -121,7 +122,11 @@ pub async fn init() -> Result<(), anyhow::Error> {
         .expect("syslog settings cache failed");
 
     // cache file list
-    if !CONFIG.common.use_dynamo_meta_store {
+    if !CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         db::file_list::local::cache()
             .await
             .expect("file list local cache failed");
@@ -161,7 +166,11 @@ pub async fn init() -> Result<(), anyhow::Error> {
     }
 
     //create dynamo db table
-    if CONFIG.common.use_dynamo_meta_store {
+    if CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         crate::common::infra::db::dynamo_db::create_dynamo_tables().await;
     }
 

@@ -16,12 +16,15 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 use tokio::sync::{Mutex, Semaphore};
 
-use crate::common::infra::{
-    cluster::{get_node_by_uuid, LOCAL_NODE_UUID},
-    config::CONFIG,
-    dist_lock,
-};
 use crate::common::meta::StreamType;
+use crate::common::{
+    infra::{
+        cluster::{get_node_by_uuid, LOCAL_NODE_UUID},
+        config::CONFIG,
+        dist_lock,
+    },
+    meta::meta_store::MetaStore,
+};
 use crate::service::db;
 
 mod file_list;
@@ -208,7 +211,11 @@ pub async fn run_merge() -> Result<(), anyhow::Error> {
     }
 
     // after compact, compact file list from storage
-    if !CONFIG.common.use_dynamo_meta_store {
+    if !CONFIG
+        .common
+        .meta_store
+        .eq(&MetaStore::DynamoDB.to_string())
+    {
         let last_file_list_offset = db::compact::file_list::get_offset().await?;
         if let Err(e) = file_list::run(last_file_list_offset).await {
             log::error!("[COMPACTOR] merge file list error: {}", e);
